@@ -121,7 +121,8 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="test.dimacs" />
+    <None Include="bibd-8-70-35-4-15_glb.cnf" />
+    <None Include="test.cnf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

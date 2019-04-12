@@ -25,7 +25,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="test.dimacs">
+    <None Include="bibd-8-70-35-4-15_glb.cnf">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="test.cnf">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
