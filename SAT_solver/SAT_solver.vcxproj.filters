@@ -31,5 +31,8 @@
     <None Include="test.cnf">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="sdiv15prop.cnf">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

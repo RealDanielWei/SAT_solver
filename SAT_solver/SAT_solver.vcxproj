@@ -122,6 +122,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="bibd-8-70-35-4-15_glb.cnf" />
+    <None Include="sdiv15prop.cnf" />
     <None Include="test.cnf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
