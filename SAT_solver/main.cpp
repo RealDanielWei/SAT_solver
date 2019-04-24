@@ -1,8 +1,10 @@
 #include "Base.h"
 
 int main() {
-
-	CNF mycnf("test.cnf");
+	CNF mycnf("uf50-01.cnf");
+	//CNF mycnf("uuf50-01.cnf");
+	//CNF mycnf("uf20-01.cnf");
+	//CNF mycnf("test.cnf");
 	//CNF mycnf("bibd-8-70-35-4-15_glb.cnf");
 	//CNF mycnf("sdiv15prop.cnf");
 	//mycnf.show();

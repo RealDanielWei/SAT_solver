@@ -162,9 +162,11 @@ public:
 					this->clauses = new clause *[nclause];
 				}
 				else {
-					this->clauses[clausen] = new clause(s, sstream, this->nliteral);
-					clausen++;
-					cout << "\rParsering File... Number of clauses=" << clausen << flush << " Loading Status: " << 100 * clausen / this->nclause << "%";
+					if (clausen < this->nclause) {
+						this->clauses[clausen] = new clause(s, sstream, this->nliteral);
+						clausen++;
+						cout << "\rParsering File... Number of clauses=" << clausen << flush << " Loading Status: " << 100 * clausen / this->nclause << "%";
+					}
 				}
 			}
 		}
@@ -199,12 +201,63 @@ public:
 		}
 	}
 
+	void set_BCP(vector<int>& bcplist, varset& vset) {
+		for (int i = 0; i < this->nclause; i++) {
+			int n = 0, n_undecided = NAN;
+			bool temp = false;
+			for (int j = 0; j < this->clauses[i]->termnum; j++) {
+				if (vset.shaders[abs(this->clauses[i]->values[j])-1] == decided) {
+					n++;
+					temp = temp || this->clauses[i]->int_to_boolean(this->clauses[i]->values[j], vset);
+				}
+				else {
+					n_undecided = this->clauses[i]->values[j];
+				}
+			}
+			if (n == this->clauses[i]->termnum - 1 && temp==false) {
+				if (n_undecided > 0) {
+					vset.values[abs(n_undecided)-1] = true;
+				}
+				else {
+					if (n_undecided < 0) {
+						vset.values[abs(n_undecided)-1] = false;
+					}
+					else {
+						cout << "n_undecided=NAN!" << endl;
+					}
+				}
+				vset.shaders[abs(n_undecided)-1] = decided;
+				bcplist.push_back(abs(n_undecided)-1);
+
+			}
+		}
+	}
+
+	void cancle_BCP(vector<int>& bcplist, varset& vset) {
+		for (int i = 0; i < bcplist.size(); i++) {
+			vset.shaders[bcplist[i]] = undecided;
+		}
+	}
+
 	bool DPLL_branch_search(varset& vset,int i,bool set,bool trace) {
 		vset.shaders[i] = decided;
 		vset.values[i] = set;
 		if (trace) {
 			cout << "switch to";
 			vset.show();
+		}
+		vector<int> bcp_list;
+		this->set_BCP(bcp_list, vset);
+		if (trace) {
+			cout << "forced decision:";
+			for (int i = 0; i < bcp_list.size(); i++) {
+				cout << " " << bcp_list[i] + 1 << "=" << vset.values[bcp_list[i]] << ",";
+			}
+			cout << endl;
+			if (bcp_list.size() > 0) {
+				cout << "switch to";
+				vset.show();
+			}
 		}
 		if (i == vset.num - 1) {
 			CNF_status cnfstatus = (this->evaluate(vset));
@@ -250,7 +303,7 @@ public:
 				return false;
 			}
 		}
-
+		this->cancle_BCP(bcp_list, vset);
 	}
 
 	bool DPLL_search(varset& vset,bool trace) {

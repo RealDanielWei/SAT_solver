@@ -34,5 +34,14 @@
     <None Include="sdiv15prop.cnf">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="uf20-01.cnf">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="uuf50-01.cnf">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="uf50-01.cnf">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -124,6 +124,9 @@
     <None Include="bibd-8-70-35-4-15_glb.cnf" />
     <None Include="sdiv15prop.cnf" />
     <None Include="test.cnf" />
+    <None Include="uf20-01.cnf" />
+    <None Include="uf50-01.cnf" />
+    <None Include="uuf50-01.cnf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
