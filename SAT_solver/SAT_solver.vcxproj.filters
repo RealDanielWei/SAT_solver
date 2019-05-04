@@ -25,9 +25,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="bibd-8-70-35-4-15_glb.cnf">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="test.cnf">
       <Filter>Resource Files</Filter>
     </None>
@@ -41,6 +38,18 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="uf50-01.cnf">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="uf100-01.cnf">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="uf20-02.cnf">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="uf75-01.cnf">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="uuf75-01.cnf">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

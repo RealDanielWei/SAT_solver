@@ -3,6 +3,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -14,6 +15,16 @@ enum Shader
 struct clause_status {
 	bool value;
 	Shader status;
+};
+
+struct watch_pair {
+	int w1, w2;
+	bool status;
+	watch_pair() {
+		this->w1 = -1;
+		this->w2 = -1;
+		this->status = false;
+	}
 };
 
 struct CNF_status {
@@ -145,6 +156,7 @@ class CNF {
 public:
 	int nclause, nliteral;
 	clause **clauses;
+	watch_pair **watchpairs;
 
 	CNF(string filepath) {
 		ifstream file(filepath);
@@ -160,18 +172,34 @@ public:
 					sstream >> this->nliteral;
 					sstream >> this->nclause;
 					this->clauses = new clause *[nclause];
+					this->watchpairs = new watch_pair *[nclause];
 				}
 				else {
 					if (clausen < this->nclause) {
 						this->clauses[clausen] = new clause(s, sstream, this->nliteral);
+						this->watchpairs[clausen] = new watch_pair();
 						clausen++;
-						cout << "\rParsering File... Number of clauses=" << clausen << flush << " Loading Status: " << 100 * clausen / this->nclause << "%";
+						//cout << "\rParsering File... Number of clauses=" << clausen << flush << " Loading Status: " << 100 * clausen / this->nclause << "%";
 					}
 				}
 			}
 		}
-		cout << endl;
-		cout << "CNF Loading finished!" << endl;
+		//initiate watchpair list
+		for (int i = 0; i < this->nclause; i++) {
+			if (this->clauses[i]->termnum < 2) {
+				this->watchpairs[i]->w1 = 0;
+				this->watchpairs[i]->w2 = 0;
+				this->watchpairs[i]->status = false;
+			}
+			else {
+				this->watchpairs[i]->w1 = 0;
+				this->watchpairs[i]->w2 = 1;
+				this->watchpairs[i]->status = false;
+			}
+		}
+
+		//cout << endl;
+		//cout << "CNF Loading finished!" << endl;
 	}
 
 	CNF_status evaluate(varset& vset) {
@@ -201,7 +229,7 @@ public:
 		}
 	}
 
-	void set_BCP(vector<int>& bcplist, varset& vset) {
+	void set_simple_BCP(vector<int>& bcplist, varset& vset) {
 		for (int i = 0; i < this->nclause; i++) {
 			int n = 0, n_undecided = NAN;
 			bool temp = false;
@@ -239,6 +267,74 @@ public:
 		}
 	}
 
+	pair<int, int> get_two_undecided_from_clause(int clindex,varset& vset) { //if find true return as found nothing
+		int index[2], n = 0;
+		for (int i = 0; i < this->clauses[clindex]->termnum; i++) {
+			bool value = this->clauses[clindex]->int_to_boolean(this->clauses[clindex]->values[i], vset);
+			if (value == true && vset.shaders[abs(this->clauses[clindex]->values[i]) - 1] == decided) {
+				pair<int, int> p = make_pair(-1, -1);
+				return p;
+			}
+			if (vset.shaders[abs(this->clauses[clindex]->values[i]) - 1] == undecided) {
+				index[n] = i;
+				n++;
+			}
+			if (n == 2) {
+				pair<int, int> p = make_pair(index[0], index[1]);
+				return p;
+			}
+		}
+		if (n == 1) {
+			pair<int, int> p = make_pair(index[0], -1);
+			return p;
+		}
+		else {
+			pair<int, int> p = make_pair(-1, -1);
+			return p;
+		}
+	}
+
+	void update_watchpairs_BCP_forward(vector<int>& bcplist,vector<int>& watchchangelist, varset& vset) {
+		for (int i = 0; i < this->nclause; i++) {
+			if (this->watchpairs[i]->status == false) {
+				pair<int, int> pa = this->get_two_undecided_from_clause(i, vset);
+				if (pa.first >= 0 && pa.second >= 0) {
+					this->watchpairs[i]->w1 = pa.first;
+					this->watchpairs[i]->w2 = pa.second;
+				}
+				else {
+					if (pa.first >= 0) {
+						int index = abs(this->clauses[i]->values[pa.first]) - 1;
+						vset.shaders[index] = decided;
+						if (this->clauses[i]->values[pa.first] > 0) {
+							vset.values[index] = true;
+						}
+						else {
+							vset.values[index] = false;
+						}
+						bcplist.push_back(index);
+						//this->watchpairs[i]->status = true;
+						//watchchangelist.push_back(i);
+					}
+					else {
+						//this->watchpairs[i]->status = true;
+						//watchchangelist.push_back(i);
+					}
+				}
+			}
+			
+		}
+	}
+
+	void update_watchpairs_BCP_backward(vector<int>& bcplist, vector<int>& watchchangelist, varset& vset) {
+		for (int i = 0; i < bcplist.size(); i++) {
+			vset.shaders[bcplist[i]] = undecided;
+		}
+		for (int i = 0; i < watchchangelist.size(); i++) {
+			this->watchpairs[watchchangelist[i]]->status = false;
+		}
+	}
+
 	bool DPLL_branch_search(varset& vset,int i,bool set,bool trace) {
 		vset.shaders[i] = decided;
 		vset.values[i] = set;
@@ -246,14 +342,26 @@ public:
 			cout << "switch to";
 			vset.show();
 		}
-		vector<int> bcp_list;
-		this->set_BCP(bcp_list, vset);
+		vector<int> bcp_list,watchchangelist;
+		this->update_watchpairs_BCP_forward(bcp_list, watchchangelist, vset);
+		//this->set_simple_BCP(bcp_list, vset);
 		if (trace) {
 			cout << "forced decision:";
 			for (int i = 0; i < bcp_list.size(); i++) {
 				cout << " " << bcp_list[i] + 1 << "=" << vset.values[bcp_list[i]] << ",";
 			}
 			cout << endl;
+			///*
+			cout << "watchlist change:";
+			for (int i = 0; i < watchchangelist.size(); i++) {
+				cout << " " << watchchangelist[i] + 1 << "=" << this->watchpairs[watchchangelist[i]]->status << ",";
+			}
+			cout << endl;
+			cout << "Watchlist:";
+			for (int i = 0; i < this->nclause; i++) {
+				cout << this->watchpairs[i]->status;
+			}
+			cout << endl;//*/
 			if (bcp_list.size() > 0) {
 				cout << "switch to";
 				vset.show();
@@ -271,6 +379,8 @@ public:
 			}
 			if (cnfstatus.value == false) {
 				vset.shaders[i] = undecided;
+				//this->cancle_BCP(bcp_list, vset);
+				this->update_watchpairs_BCP_backward(bcp_list, watchchangelist, vset);
 			}
 			return cnfstatus.value;
 		}
@@ -286,6 +396,8 @@ public:
 				}
 				else {
 					vset.shaders[i] = undecided;
+					//this->cancle_BCP(bcp_list, vset);
+					this->update_watchpairs_BCP_backward(bcp_list, watchchangelist, vset);
 					return false;
 				}
 			}
@@ -300,10 +412,11 @@ public:
 			}
 			else {
 				vset.shaders[i] = undecided;
+				//this->cancle_BCP(bcp_list, vset);
+				this->update_watchpairs_BCP_backward(bcp_list, watchchangelist, vset);
 				return false;
 			}
 		}
-		this->cancle_BCP(bcp_list, vset);
 	}
 
 	bool DPLL_search(varset& vset,bool trace) {
@@ -315,7 +428,7 @@ public:
 		if (flag == true) {
 			return true;
 		}
-		cout << "Unsatisfiable!" << endl;
+		//cout << "Unsatisfiable!" << endl;
 		return false;
 	}
 };
